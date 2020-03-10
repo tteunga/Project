@@ -1,8 +1,5 @@
 ---
 title: "교통사고 기술통계분석 및 GPS 좌표 시각화"
-output:
-  html_document: 
-    keep_md: yes
 ---  
 ***
 
@@ -19,7 +16,6 @@ output:
 **- GPS 좌표 시각화**  
 : 경기도 내 최다 사고 지역과 GPS 좌표를 이용한 사고발생 현황 및 CCTV 취약지 시각화  
 
-***
   
 ### # 패키지 로드
 
