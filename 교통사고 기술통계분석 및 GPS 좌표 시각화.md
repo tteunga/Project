@@ -252,7 +252,7 @@ sum_by_quarter_melt <- melt(sum_by_quarter, id.vars = "발생년도")
 # ggplot
 ggplot() + geom_line(data=sum_by_quarter_melt, aes(x=발생년도, y=value, group=variable, color=variable), size=1.5)
 ```
-
+![1](https://user-images.githubusercontent.com/33209479/76287297-7948c100-62e7-11ea-8477-733279d25daf.PNG)
 ![](test_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 - 전체 교통사고 수, 사상자 수는 매년 감소하지만, 부상신고자수는 증가하고 있음
