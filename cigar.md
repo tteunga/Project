@@ -1,0 +1,612 @@
+---
+title: "Untitled"
+output: 
+  html_document: 
+    keep_md: yes
+---
+# < 1970년 미국 담배 판매량의 요인분석 >
+
+***
+
+> ### 분석 개요
+
+**1. 데이터**  
+- 1970년 미국 담배 판매량
+
+변수 |정의  
+------------- | ------------- 
+Age | 주에서 살고 있는 사람들 나이의 중앙값
+HS | 주에서 고등학교를 졸업한 25세 이상의 비율
+Income | 1인 소득(달러)
+Black | 주에 사는 흑인의 비율
+Female | 주에서 살고 있는 여성의 비율
+Price | 담배 팩의 가중 평균 가격(센트)
+Sales | 1인당 기준으로 판매되는 담배 팩 수  
+
+**2. 목적**  
+- 1970년 미국의 담배 판매량에 어떠한 요소가 얼마만큼의 영향을 미쳤는지 알아보고 그것을 토대로 담배 판매량을 예측하는 식을 도출한다.  
+- 25년간 여성 흡연자가 많이 증가하였지만, 40년 전인 1970년에는 여성이 담배 판매량의 어느 정도 영향을 미쳤을지 알아본다.
+
+***
+  
+### # 패키지 로드
+
+```r
+library(car)
+```
+
+## 1. 데이터 로드
+
+```r
+# 데이터 로드
+raw <- read.csv("C:/Users/Windows10/Desktop/Project/data/담배 소비량.csv")
+
+# 데이터 확인
+str(raw)
+```
+
+```
+## 'data.frame':	51 obs. of  8 variables:
+##  $ State : Factor w/ 51 levels "AK","AL","AR",..: 2 1 4 3 5 6 7 9 8 10 ...
+##  $ Age   : num  27 22.9 26.3 29.1 28.1 26.2 29.1 26.8 28.4 32.3 ...
+##  $ HS    : num  41.3 66.7 58.1 39.9 62.6 63.9 56 54.6 55.2 52.6 ...
+##  $ Income: int  2948 4644 3665 2878 4493 3855 4917 4524 5079 3738 ...
+##  $ Black : num  26.2 3 3 18.3 7 3 6 14.3 71.1 15.3 ...
+##  $ Female: num  51.7 45.7 50.8 51.5 50.8 50.7 51.5 51.3 53.5 51.8 ...
+##  $ Price : num  42.7 41.8 38.5 38.8 39.7 31.1 45.5 41.3 32.6 43.8 ...
+##  $ Sales : num  89.8 121.3 115.2 100.3 123 ...
+```
+
+```r
+attach(raw)
+```
+
+## 2. 상관분석
+### 1) 산점도
+
+```r
+panel.hist <- function(x, ...)
+{
+usr <- par("usr"); on.exit(par(usr))
+par(usr = c(usr[1:2], 0, 1.5) )
+h <- hist(x, plot = FALSE)
+breaks <- h$breaks; nB <- length(breaks)
+y <- h$counts; y <- y/max(y)
+rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+usr <- par("usr"); on.exit(par(usr))
+par(usr = c(0, 1, 0, 1))
+r <- abs(cor(x, y))
+txt <- format(c(r, 0.123456789), digits = digits)[1]
+txt <- paste0(prefix, txt)
+if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+pairs(raw, upper.panel = panel.cor, diag.panel = panel.hist)
+```
+
+![](cigar_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+- 종속변수 Sales를 중심으로 산점도를 보았을 때, Age, Incomed과 약한 선형관계가 있는 것으로 보인다.
+
+### 2) 상관계수 행렬
+
+```r
+cor(raw[,2:8])
+```
+
+```
+##                Age          HS      Income       Black      Female       Price
+## Age     1.00000000 -0.09891626  0.25658098 -0.04033021  0.55303189  0.24775673
+## HS     -0.09891626  1.00000000  0.53400534 -0.50171191 -0.41737794  0.05697473
+## Income  0.25658098  0.53400534  1.00000000  0.01728756 -0.06882666  0.21455717
+## Black  -0.04033021 -0.50171191  0.01728756  1.00000000  0.45089974 -0.14777619
+## Female  0.55303189 -0.41737794 -0.06882666  0.45089974  1.00000000  0.02247351
+## Price   0.24775673  0.05697473  0.21455717 -0.14777619  0.02247351  1.00000000
+## Sales   0.22655492  0.06669476  0.32606789  0.18959037  0.14622124 -0.30062263
+##              Sales
+## Age     0.22655492
+## HS      0.06669476
+## Income  0.32606789
+## Black   0.18959037
+## Female  0.14622124
+## Price  -0.30062263
+## Sales   1.00000000
+```
+- 종속변수 Sales를 중심으로 상관계수행렬을 보았을 때,  
+  대체로 관계가 크지 않는 것으로 보이고 양의 상관관계를 보이지만 Price만 음의 상관관계를 보인다.
+  
+## 3. 회귀모형진단
+### 1) 분산분석
+
+```r
+# 모형설정
+cigar.lm = lm(Sales~Age+HS+Income+Black+Female+Price)
+
+# 분산분석
+anova(cigar.lm)
+```
+
+```
+## Analysis of Variance Table
+## 
+## Response: Sales
+##           Df Sum Sq Mean Sq F value   Pr(>F)   
+## Age        1   2640  2639.5  3.3253 0.075019 . 
+## HS         1    412   412.3  0.5195 0.474883   
+## Income     1   3939  3939.1  4.9625 0.031063 * 
+## Black      1   1587  1587.1  1.9994 0.164393   
+## Female     1     16    16.1  0.0203 0.887307   
+## Price      1   7905  7905.3  9.9591 0.002886 **
+## Residuals 44  34926   793.8                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+```r
+summary(cigar.lm)
+```
+
+```
+## 
+## Call:
+## lm(formula = Sales ~ Age + HS + Income + Black + Female + Price)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -48.398 -12.388  -5.367   6.270 133.213 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)   
+## (Intercept) 103.34485  245.60719   0.421  0.67597   
+## Age           4.52045    3.21977   1.404  0.16735   
+## HS           -0.06159    0.81468  -0.076  0.94008   
+## Income        0.01895    0.01022   1.855  0.07036 . 
+## Black         0.35754    0.48722   0.734  0.46695   
+## Female       -1.05286    5.56101  -0.189  0.85071   
+## Price        -3.25492    1.03141  -3.156  0.00289 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 28.17 on 44 degrees of freedom
+## Multiple R-squared:  0.3208,	Adjusted R-squared:  0.2282 
+## F-statistic: 3.464 on 6 and 44 DF,  p-value: 0.006857
+```
+- P-value 0.006857가 유의수준 0.05보다 작으므로 대립가설을 채택하여 회귀모형이 유의하다고 할 수 있다.
+
+### 2) 계수들의 유의성
+
+```r
+summary(cigar.lm)
+```
+
+```
+## 
+## Call:
+## lm(formula = Sales ~ Age + HS + Income + Black + Female + Price)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -48.398 -12.388  -5.367   6.270 133.213 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)   
+## (Intercept) 103.34485  245.60719   0.421  0.67597   
+## Age           4.52045    3.21977   1.404  0.16735   
+## HS           -0.06159    0.81468  -0.076  0.94008   
+## Income        0.01895    0.01022   1.855  0.07036 . 
+## Black         0.35754    0.48722   0.734  0.46695   
+## Female       -1.05286    5.56101  -0.189  0.85071   
+## Price        -3.25492    1.03141  -3.156  0.00289 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 28.17 on 44 degrees of freedom
+## Multiple R-squared:  0.3208,	Adjusted R-squared:  0.2282 
+## F-statistic: 3.464 on 6 and 44 DF,  p-value: 0.006857
+```
+
+```r
+# 95% 신뢰구간
+confint(cigar.lm)
+```
+
+```
+##                     2.5 %       97.5 %
+## (Intercept) -3.916439e+02 598.33360254
+## Age         -1.968565e+00  11.00946945
+## HS          -1.703475e+00   1.58030249
+## Income      -1.642517e-03   0.03953542
+## Black       -6.243909e-01   1.33946122
+## Female      -1.226033e+01  10.15461632
+## Price       -5.333583e+00  -1.17625412
+```
+- Income의 P-value 0.070364가 유의수준 0.1보다 작고 Price의 P-value 0.002886이 유의수준 0.01보다 작으므로 대립가설을 채택하여 유의한계수라고 할 수 있다.   
+- 또한, Price의 경우 95% 신뢰구간에 0이 포함되지 않으므로 0이 아니라고 할 수 있다.
+
+## 4. 변수선택
+### 1) Backward stepwise regrression
+
+```r
+reduced.model = step(cigar.lm, direction="backward")
+```
+
+```
+## Start:  AIC=346.99
+## Sales ~ Age + HS + Income + Black + Female + Price
+## 
+##          Df Sum of Sq   RSS    AIC
+## - HS      1       4.5 34931 344.99
+## - Female  1      28.5 34954 345.03
+## - Black   1     427.4 35353 345.61
+## <none>                34926 346.99
+## - Age     1    1564.6 36491 347.22
+## - Income  1    2730.2 37656 348.83
+## - Price   1    7905.3 42831 355.39
+## 
+## Step:  AIC=344.99
+## Sales ~ Age + Income + Black + Female + Price
+## 
+##          Df Sum of Sq   RSS    AIC
+## - Female  1      29.3 34960 343.04
+## - Black   1     729.3 35660 344.05
+## <none>                34931 344.99
+## - Age     1    1777.4 36708 345.52
+## - Income  1    4846.8 39777 349.62
+## - Price   1    8013.4 42944 353.53
+## 
+## Step:  AIC=343.04
+## Sales ~ Age + Income + Black + Price
+## 
+##          Df Sum of Sq   RSS    AIC
+## - Black   1     871.3 35831 342.29
+## <none>                34960 343.04
+## - Age     1    2770.0 37730 344.93
+## - Income  1    5726.9 40687 348.77
+## - Price   1    7997.4 42957 351.54
+## 
+## Step:  AIC=342.29
+## Sales ~ Age + Income + Price
+## 
+##          Df Sum of Sq   RSS    AIC
+## <none>                35831 342.29
+## - Age     1    2723.7 38555 344.03
+## - Income  1    5981.8 41813 348.17
+## - Price   1    9002.8 44834 351.72
+```
+
+```r
+reduced.model
+```
+
+```
+## 
+## Call:
+## lm(formula = Sales ~ Age + Income + Price)
+## 
+## Coefficients:
+## (Intercept)          Age       Income        Price  
+##    64.24823      4.15591      0.01928     -3.39923
+```
+
+### 2) 분산분석
+
+```r
+anova(reduced.model)
+```
+
+```
+## Analysis of Variance Table
+## 
+## Response: Sales
+##           Df Sum Sq Mean Sq F value   Pr(>F)   
+## Age        1   2640  2639.5  3.4623 0.069046 . 
+## Income     1   3952  3952.1  5.1840 0.027392 * 
+## Price      1   9003  9002.8 11.8091 0.001243 **
+## Residuals 47  35831   762.4                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+```r
+summary(cigar.lm)
+```
+
+```
+## 
+## Call:
+## lm(formula = Sales ~ Age + HS + Income + Black + Female + Price)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -48.398 -12.388  -5.367   6.270 133.213 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)   
+## (Intercept) 103.34485  245.60719   0.421  0.67597   
+## Age           4.52045    3.21977   1.404  0.16735   
+## HS           -0.06159    0.81468  -0.076  0.94008   
+## Income        0.01895    0.01022   1.855  0.07036 . 
+## Black         0.35754    0.48722   0.734  0.46695   
+## Female       -1.05286    5.56101  -0.189  0.85071   
+## Price        -3.25492    1.03141  -3.156  0.00289 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 28.17 on 44 degrees of freedom
+## Multiple R-squared:  0.3208,	Adjusted R-squared:  0.2282 
+## F-statistic: 3.464 on 6 and 44 DF,  p-value: 0.006857
+```
+- P-value 0.000657이 유의수준 0.05보다 작으므로 대립가설을 채택하여 회귀모형이 유의하다고 할 수 있다.
+
+### 3) 계수들의 유의성
+
+```r
+summary(reduced.model)
+```
+
+```
+## 
+## Call:
+## lm(formula = Sales ~ Age + Income + Price)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -50.430 -13.853  -4.962   6.691 128.947 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)   
+## (Intercept) 64.248227  61.933008   1.037  0.30487   
+## Age          4.155909   2.198699   1.890  0.06491 . 
+## Income       0.019281   0.006883   2.801  0.00737 **
+## Price       -3.399234   0.989172  -3.436  0.00124 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 27.61 on 47 degrees of freedom
+## Multiple R-squared:  0.3032,	Adjusted R-squared:  0.2588 
+## F-statistic: 6.818 on 3 and 47 DF,  p-value: 0.0006565
+```
+
+```r
+# 95% 신뢰구간
+confint(reduced.model)
+```
+
+```
+##                     2.5 %       97.5 %
+## (Intercept) -60.344915153 188.84136925
+## Age          -0.267303090   8.57912034
+## Income        0.005433689   0.03312839
+## Price        -5.389191034  -1.40927685
+```
+- Y절편 P-value가 유의수준 0.05보다 크므로 대립가설을 채택할 수 없으므로 모형식에서 제거한다.
+
+### 4) 모형 재설정
+
+```r
+cigar_r = raw[,c(2,4,7,8)]
+head(cigar_r)
+```
+
+```
+##    Age Income Price Sales
+## 1 27.0   2948  42.7  89.8
+## 2 22.9   4644  41.8 121.3
+## 3 26.3   3665  38.5 115.2
+## 4 29.1   2878  38.8 100.3
+## 5 28.1   4493  39.7 123.0
+## 6 26.2   3855  31.1 124.8
+```
+
+
+```r
+cigar_r.lm = lm(Sales~-1+Age+Income+Price, data = cigar_r)
+```
+
+## 5. 이상치
+### 1) 이상치 확인
+
+```r
+# Cook's distance
+cooksD = cooks.distance(cigar_r.lm)
+4/(51-2)
+```
+
+```
+## [1] 0.08163265
+```
+
+```r
+cooksD[cooksD > 0.08]
+```
+
+```
+##         9        12        29        30 
+## 0.1150799 0.1161135 0.1800647 0.3477704
+```
+
+```r
+plot(cigar_r.lm, which = 4)
+abline(h = 0.08, lty = 2, col = 2)
+```
+
+![](cigar_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
+### 2) 이상치 제거
+
+```r
+cigar_rf = subset(cigar_r, cooksD < 0.08)
+summary(cigar_rf)
+```
+
+```
+##       Age            Income         Price           Sales      
+##  Min.   :22.90   Min.   :2626   Min.   :29.00   Min.   : 65.5  
+##  1st Qu.:26.40   1st Qu.:3240   1st Qu.:35.25   1st Qu.:105.3  
+##  Median :27.20   Median :3738   Median :38.90   Median :115.9  
+##  Mean   :27.48   Mean   :3701   Mean   :38.18   Mean   :116.2  
+##  3rd Qu.:28.90   3rd Qu.:3996   3rd Qu.:41.35   3rd Qu.:124.1  
+##  Max.   :32.30   Max.   :4917   Max.   :45.50   Max.   :172.4
+```
+
+
+```r
+cigar_rf.lm = lm(Sales~-1+Age+Income+Price, data = cigar_rf)
+```
+
+
+## 6. 잔차분석
+### 1) 정규성
+
+```r
+library(car)
+
+par(mfrow=c(1,2))
+
+qqPlot(cigar_rf.lm, labels = row.names(cigar_rf), id.method="identify", simulate=TRUE, main="QQ_ plot")
+```
+
+```
+##  8 34 
+##  8 30
+```
+
+```r
+residplot <- function(cigar_rf.lm, nbreaks=10) {
+  z <- rstudent(cigar_rf.lm)
+  hist(z, breaks=nbreaks, freq=FALSE, xlab="Studentized Residual",
+       main="Distribution of Errors")
+  rug(jitter(z), col="brown")
+  curve(dnorm(x, mean=mean(z), sd=sd(z)),add=TRUE, col="blue", lwd=2)
+  lines(density(z)$x, density(z)$y,col="red", lwd=2, lty=2)
+  legend("topright",legend = c( "Normal Curve", "Kernel Density Curve"),
+         lty=1:2, col=c("blue","red"), cex=.7)
+  }
+residplot(cigar_rf.lm)
+```
+
+![](cigar_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+
+```r
+shapiro.test(residuals(cigar_rf.lm))
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  residuals(cigar_rf.lm)
+## W = 0.93074, p-value = 0.008064
+```
+- QQ_plot에서 95% 신뢰구간(점선) 안쪽으로 대부분의 잔차들이 포함되어 있으면서 몇 개의 값만 포함되지 않는 것을 볼 수 있고,   
+  Distribution of Errors에서는 잔차의 분포가 정규분포 모형에 근사하지 않다는 것을 알 수 있다. 
+- Shapiro test 결과 P-value 값이 유의수준 0.05보다 작으므로 대립가설을 채택하여 정규성을 만족하지 못한다고 할 수 있다.  
+  이 문제는 이상치를 더 제거하면 해결 할 수 있을 것 같다.
+
+### 2) 독립성
+
+```r
+# 독립성
+library(lmtest)
+```
+
+```
+## Warning: package 'lmtest' was built under R version 3.6.3
+```
+
+```
+## Loading required package: zoo
+```
+
+```
+## Warning: package 'zoo' was built under R version 3.6.3
+```
+
+```
+## 
+## Attaching package: 'zoo'
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     as.Date, as.Date.numeric
+```
+
+```r
+plot(fitted.values(cigar_rf.lm), residuals(cigar_rf.lm), xlab = '추정값', ylab = '잔차')
+abline(h = 0, lty = 2)
+```
+
+![](cigar_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+
+
+```r
+dwtest(cigar_rf.lm)
+```
+
+```
+## 
+## 	Durbin-Watson test
+## 
+## data:  cigar_rf.lm
+## DW = 2.288, p-value = 0.8389
+## alternative hypothesis: true autocorrelation is greater than 0
+```
+- 잔차들이 패턴 없이 퍼져있으므로 독립성을 만족한다고 볼 수 있다.  
+- Durbin-Watson test 결과 P-value 값이 유의수준 0.05보다크므로 귀무가설을 채택한다. 
+
+### 3) 선형성
+
+```r
+crPlots(cigar_rf.lm)
+```
+
+![](cigar_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+
+### 4) 등분산성
+
+```r
+spreadLevelPlot(cigar_rf.lm)
+```
+
+![](cigar_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+
+```
+## 
+## Suggested power transformation:  0.9269713
+```
+
+```r
+bptest(cigar_rf.lm)
+```
+
+```
+## 
+## 	studentized Breusch-Pagan test
+## 
+## data:  cigar_rf.lm
+## BP = 1.599, df = 2, p-value = 0.4495
+```
+- 잔차들이 직선을 따라 패턴 없이 분포되어있다.  
+- Breusch-Pagan test 결과 P-value가 유의수준 0.05보다 크므로 귀무가설을 채택하여 등분산성을 만족한다고 할 수 있다.
+
+## 7. 결론
+
+```r
+cigar_rf.lm
+```
+
+```
+## 
+## Call:
+## lm(formula = Sales ~ -1 + Age + Income + Price, data = cigar_rf)
+## 
+## Coefficients:
+##      Age    Income     Price  
+##  5.20248   0.01598  -2.26001
+```
