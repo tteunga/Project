@@ -1,9 +1,5 @@
----
-title: "Untitled"
-output:
-  html_document: 
-    keep_md: yes
----
+
+# < Gaon Chart를 통한 음악 다운로드 순위 분석_2016 >
 
 ***
 
@@ -18,32 +14,12 @@ output:
 
 ***
 
+### 패키지 로드
 ```r
 library(XML)
 library(stringr)
-```
-
-```
-## Warning: package 'stringr' was built under R version 3.6.3
-```
-
-```r
 library(plyr)
-```
-
-```
-## Warning: package 'plyr' was built under R version 3.6.3
-```
-
-```r
 library(reshape)
-```
-
-```
-## Warning: package 'reshape' was built under R version 3.6.3
-```
-
-```r
 library(ggplot2)
 ```
 
@@ -288,8 +264,7 @@ ggplot(weektop10, aes(x=title, y=week, fill=title)) +
         legend.key.size = unit(5, 'mm'),
         legend.text =  element_text(size=10))
 ```
-
-![](gaon_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![image](https://user-images.githubusercontent.com/33209479/76583083-94037b80-651b-11ea-93a5-54a05947c96f.png)
 
 ### 2) 예능별 음원 다운로드 횟수
 
@@ -353,7 +328,8 @@ ggplot(enter_d, aes(x=enter_title, y=download, fill=enter_title)) +
         legend.text =  element_text(size=12))
 ```
 
-![](gaon_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![image](https://user-images.githubusercontent.com/33209479/76583111-abdaff80-651b-11ea-8b18-aa3a12ab112b.png)
+
 ### 3) 드라마OST 음원 다운로드 횟수
 
 ```r
@@ -408,45 +384,10 @@ ggplot(ost_d, aes(x=drama, y=download, fill=drama)) +
         legend.key.size = unit(5, 'mm'),
         legend.text =  element_text(size=12))
 ```
+![image](https://user-images.githubusercontent.com/33209479/76583145-c7460a80-651b-11ea-8724-b6c2b7bc4d10.png)
 
-![](gaon_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
-
-### 3) 드라마OST 음원 다운로드 횟수
-
+### 4) 제작사 음원 다운로드 횟수
 ```r
-ost <- raw[grep("태양의|구르미|오해영|함부로|달의|응답하라|닥터스|운빨|닥터스|돌아와요", raw$album),]
-head(ost)
-```
-
-```
-##         start        end rank                title          singer
-## 3  2015-12-27 2016-01-02    3          매일 그대와 소진 (걸스데이)
-## 4  2015-12-27 2016-01-02    4                 함께            노을
-## 5  2015-12-27 2016-01-02    5                 소녀            오혁
-## 6  2015-12-27 2016-01-02    6      걱정말아요 그대            이적
-## 10 2015-12-27 2016-01-02   10  청춘 (Feat. 김창완)            김필
-## 12 2015-12-27 2016-01-02   12 혜화동 (혹은 쌍문동)          박보람
-##                       album count                    pro   dist
-## 3  응답하라 1988 OST Part 8 85124 CJ E&M, 쿵엔터테인먼트 CJ E&M
-## 4  응답하라 1988 OST Part 7 81875 CJ E&M, 쿵엔터테인먼트 CJ E&M
-## 5  응답하라 1988 OST Part 3 75382 CJ E&M, 쿵엔터테인먼트 CJ E&M
-## 6  응답하라 1988 OST Part 2 74835 CJ E&M, 쿵엔터테인먼트 CJ E&M
-## 10 응답하라 1988 OST Part 1 56110 CJ E&M, 쿵엔터테인먼트 CJ E&M
-## 12 응답하라 1988 OST Part 4 55092 CJ E&M, 쿵엔터테인먼트 CJ E&M
-```
-
-```r
-ost$drama <- ifelse(grepl("태양의", ost$album), "태양의 후예",
-                     ifelse(grepl("구르미", ost$album), "구르미 그린 달빛",
-                     ifelse(grepl("오해영", ost$album), "또 오해영",
-                     ifelse(grepl("함부로", ost$album), "함부로 애틋하게",
-                     ifelse(grepl("달의", ost$album), "달의 연인-보보경심려",
-                     ifelse(grepl("응답하라", ost$album), "응답하라1988",
-                     ifelse(grepl("닥터스", ost$album), "닥터스",
-                     ifelse(grepl("운빨", ost$album), "운빨로맨스",
-                     ifelse(grepl("닥터스", ost$album), "닥터스",
-                     ifelse(grepl("돌아와요", ost$album), "돌아와요 아저씨", ""))))))))))
-
 pro_d <- ddply(raw, .(pro), summarise, download=sum(count))
 pro_d$download <- pro_d$download*0.001
 pro_s <- pro_d[order(pro_d$download, decreasing = T),]
@@ -481,15 +422,5 @@ ggplot(pro_top10, aes(x=pro, y=download, fill=pro)) +
         legend.key.size = unit(5, 'mm'),
         legend.text =  element_text(size=12))
 ```
-
-![](gaon_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
-
-
-
-
-
-
-
-
-
+![image](https://user-images.githubusercontent.com/33209479/76583283-29067480-651c-11ea-88e9-9446fea189e5.png)
 
