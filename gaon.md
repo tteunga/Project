@@ -290,7 +290,8 @@ ggplot(weektop10, aes(x=title, y=week, fill=title)) +
         legend.text =  element_text(size=8))
 ```
 
-![](gaon_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![image](https://user-images.githubusercontent.com/33209479/76581302-43d5ea80-6516-11ea-92af-e99b9f0f10b9.png)
+
 
 ### 2) 예능별 음원 다운로드 횟수
 
